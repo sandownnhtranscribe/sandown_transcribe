@@ -54,5 +54,15 @@ python3 download_sandown.py --from 2026-08-01 --to 2026-08-31 --out ./august_tra
 
 When successful, transcripts are saved as `YYYYmmdd-zboa.log`. This file format preserves a diagnostic header from the Whisper tool, followed by the standard timestamped transcript text.
 
+## Reliability & Progress
+
+Downloads are capped so a stalled transfer cannot hang the script:
+
+* Each download is limited by curl's `--max-time` (3600 s default) and `--connect-timeout` (30 s). On timeout curl retries up to three times before failing with a clear message.
+* The urllib fallback (`curl` unavailable) passes the same per-download timeout to `urlopen()`.
+* A live progress meter prints bytes received each second while a download runs, and resumes interrupted downloads when possible.
+
+Tune the limits by editing `DOWNLOAD_TIMEOUT` / `CONNECT_TIMEOUT` at the top of the script (raise `DOWNLOAD_TIMEOUT` for very large files on slow links).
+
 ---
 *Note: The script requires `ffmpeg`, `curl`, and `whisper` to be installed and available in your PATH.*

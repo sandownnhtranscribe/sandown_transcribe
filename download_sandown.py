@@ -35,9 +35,17 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import urllib.request
 
 BASE = "http://173.209.96.235"
+
+# Per-download wall-clock limits (seconds). These prevent the script from
+# hanging indefinitely on a stalled transfer: curl's --max-time caps the whole
+# operation, and the urllib fallback passes the same timeout to urlopen(). Large
+# video files on slow connections may need DOWNLOAD_TIMEOUT raised.
+CONNECT_TIMEOUT = 30
+DOWNLOAD_TIMEOUT = 3600
 
 
 def fetch(url: str, timeout: int = 30) -> bytes:
@@ -122,76 +130,135 @@ def resolve_shows_in_range(channel_id: str, start: date, end: date):
     return matches
 
 
-def resolve_resolution(show_id: str, slug: str, res: str):
-    """Return the `<res>.mp4` filename for a channel slug.
+def _tier_from_master(master: str, res: str):
+    """Return the tier filename (e.g. ``1080p.m3u8``) matching `res`.
 
-    Reads the master playlist and picks the tier whose file matches `res`.
-    Falls back to using `res` directly as the filename if it isn't listed.
+    Accepts a bare tier name ("1080p" -> "1080p.m3u8") or an exact filename that
+    already ends in .m3u8. Returns None if no such tier is listed.
     """
-    master = fetch(f"{BASE}/store-3/{show_id}-{slug}/vod.m3u8").decode("utf-8", "replace")
-
-    # Every non-comment line in the master playlist that ends in .m3u8 is a tier file.
     tiers = {line.strip() for line in master.splitlines()
              if line.strip().endswith(".m3u8") and not line.strip().startswith("#")}
-
-    # Accept "1080p" -> "1080p.m3u8", or an exact filename already given.
     candidate = res if res.endswith(".m3u8") else f"{res}.m3u8"
-    if candidate in tiers:
-        return candidate[:-5] + ".mp4"  # swap .m3u8 -> .mp4
+    return candidate if candidate in tiers else None
 
-    # Fallback: assume the tier maps to a same-named .mp4 file.
-    base = res[:-5] if res.endswith(".m3u8") else res
-    return f"{base}.mp4"
+
+def _media_layout(show_id: str, slug: str, tier: str):
+    """Classify how a given tier's media is stored on the server.
+
+    CableCast has shipped two layouts over time; both are handled here:
+
+    * **Combined** -- the playlist references a single self-contained file
+      (e.g. ``1080p.mp4``); every segment is just a byte-range into it. This is
+      what recent shows use, and for audio too (``1080p_audio.mp4``). A single
+      HTTP fetch gets the whole file -- no per-segment downloads.
+    * **Segmented** -- the playlist has an ``#EXT-X-MAP`` init segment plus many
+      tiny individual ``*.m4s`` files (older shows, e.g. May 2026). There is no
+      single combined file to download.
+
+    The two are told apart by the *distinct* media filenames referenced: a
+    combined layout points every segment at one repeated filename; a segmented
+    layout has many distinct ``*.m4s`` files. (A MAP init segment does **not**
+    imply segmented -- combined files embed their init as a byte-range into the
+    same file.)
+
+    Returns a dict:
+
+        {"kind": "file", "path": "<name>"}
+        {"kind": "segments", "init": "<name>", "segments": ["<name>", ...]}
+    """
+    show_dir = f"{show_id}-{slug}"
+    playlist = fetch(f"{BASE}/store-3/{show_dir}/{tier}").decode("utf-8", "replace")
+
+    # Collect the distinct media filenames referenced by segment lines (ignoring
+    # comments and the MAP init). A combined layout references a single file for
+    # every segment; a segmented layout has many distinct *.m4s files.
+    seg_re = re.compile(r'^(?:\./)?([A-Za-z0-9_./-]+\.(?:m4s|mp4))$')
+    refs = []
+    for line in playlist.splitlines():
+        s = line.strip()
+        if not s or s.startswith("#"):
+            continue
+        m = seg_re.match(s)
+        if m:
+            refs.append(m.group(1))
+
+    distinct = sorted(set(refs))
+    if len(distinct) == 1:
+        # Combined file: one self-contained download; every segment is a byte-range.
+        return {"kind": "file", "dir": show_dir, "path": distinct[0]}
+
+    # Segmented layout: pull the init (MAP) URI and every segment in order.
+    map_m = re.search(r'#EXT-X-MAP:URI="([^"]+)"', playlist)
+    if not map_m:
+        return None
+    init = map_m.group(1).strip()
+    if init.startswith("./"):
+        init = init[2:]
+    return {"kind": "segments", "dir": show_dir,
+            "init": init, "segments": refs}
+
+
+def resolve_resolution(show_id: str, slug: str, res: str):
+    """Return the media layout for a requested resolution tier.
+
+    Reads the master playlist, picks the matching tier, and classifies whether
+    that tier is stored as a single combined file or as individual segments.
+    Returns None if the tier can't be resolved.
+    """
+    master = fetch(f"{BASE}/store-3/{show_id}-{slug}/vod.m3u8").decode("utf-8", "replace")
+    tier = _tier_from_master(master, res)
+    if not tier:
+        return None
+    return _media_layout(show_id, slug, tier)
 
 
 def resolve_audio_file(show_id: str, slug: str):
-    """Return the audio `.mp4` filename for a channel slug.
+    """Return the media layout for a show's shared audio track.
 
     CableCast serves one shared AAC-in-fMP4 audio track per show (the URI in the
     master playlist's #EXT-X-MEDIA line), regardless of video resolution. We read
     that URI directly so it works even if the tier name doesn't match the file.
+    Returns None if no audio track is present.
     """
     master = fetch(f"{BASE}/store-3/{show_id}-{slug}/vod.m3u8").decode("utf-8", "replace")
     m = re.search(r'#EXT-X-MEDIA:[^#]*URI="([^"]+)"', master)
     if not m:
         return None
     uri = m.group(1).strip()
-    # Strip a leading "./" and swap .m3u8 -> .mp4.
+    # Strip a leading "./" so it matches the tier names in the master playlist.
     if uri.startswith("./"):
         uri = uri[2:]
-    return uri[:-5] + ".mp4" if uri.endswith(".m3u8") else uri
-
+    return _media_layout(show_id, slug, uri)
 
 def download(show_id: str, slug: str, res: str, out_dir: str):
-    mp4_file = resolve_resolution(show_id, slug, res)
-    url = f"{BASE}/store-3/{show_id}-{slug}/{mp4_file}"
+    layout = resolve_resolution(show_id, slug, res)
+    if not layout:
+        sys.exit(f"Could not resolve resolution '{res}' for {show_id}-{slug}.")
 
     os.makedirs(out_dir, exist_ok=True)
     safe_slug = slug.replace("/", "_")
     out_file = os.path.join(out_dir, f"{show_id}-{safe_slug}.mp4")
 
     print(f"Latest show: id={show_id} slug={slug}")
-    print(f"File       : {mp4_file}")
-    print(f"URL        : {url}")
+    print(f"Layout     : {layout['kind']}")
     print(f"Output     : {out_file}")
 
-    _download_one(url, out_file)
+    _download_media(layout, out_file)
 
     # Audio is a single shared track per show; fetch it and mux into the video.
-    audio_file = resolve_audio_file(show_id, slug)
-    if audio_file:
-        audio_url = f"{BASE}/store-3/{show_id}-{slug}/{audio_file}"
+    audio_layout = resolve_audio_file(show_id, slug)
+    if audio_layout:
         audio_tmp = os.path.join(out_dir, f".{show_id}-{safe_slug}-audio.mp4")
-        print(f"Audio      : {audio_file}")
-        print(f"Audio URL  : {audio_url}")
-        _download_one(audio_url, audio_tmp)
+        print(f"Audio      : {audio_layout['kind']}")
+        _download_media(audio_layout, audio_tmp)
 
         if shutil.which("ffmpeg"):
             out_tmp = f"/tmp/sandown_mux_{show_id}_{safe_slug}.mp4"
+            # Re-encoding streams to standard codecs (H264/AAC) is necessary for robust muxing
             cmd = ["ffmpeg", "-y", "-loglevel", "info",
                    "-i", out_file, "-i", audio_tmp,
-                   "-c", "copy", "-map", "0:v:0", "-map", "1:a:0",
-                   out_tmp]
+                   "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac",
+                   "-movflags", "+faststart", out_tmp]
             print("Muxing:", " ".join(cmd))
             proc = subprocess.run(cmd)
             if proc.returncode != 0:
@@ -307,25 +374,106 @@ def _extract_header(captured_path: str) -> str:
     return "\n".join(lines[:end]).strip()
 
 
+def _progress_loop(stop: "threading.Event", out_file: str) -> None:
+    """Print a live byte-count for ``out_file`` until ``stop`` is set.
+
+    Runs on a background thread; the caller joins it after the transfer ends so
+    the final count line prints cleanly. Prints nothing if the file never grows
+    (e.g. an empty response) to avoid misleading output.
+    """
+    last = os.path.getsize(out_file) if os.path.exists(out_file) else 0
+    while not stop.is_set():
+        cur = os.path.getsize(out_file) if os.path.exists(out_file) else 0
+        if cur != last:
+            print(f"  ... {cur / (1024 * 1024):.1f} MB", flush=True)
+            last = cur
+        stop.wait(1)
+
+
+def _run_with_progress(cmd: list[str]) -> None:
+    """Run a curl command, printing progress until it finishes or exits."""
+    out_file = cmd[cmd.index("-o") + 1]
+    stop = threading.Event()
+    thread = threading.Thread(target=_progress_loop, args=(stop, out_file),
+                              daemon=True)
+    thread.start()
+    proc = subprocess.run(cmd)
+    stop.set()
+    thread.join()
+    if proc.returncode != 0:
+        sys.exit(f"download failed with exit code {proc.returncode} ({cmd[-1]})")
+
+
+def _copyfileobj_with_progress(resp, fh) -> None:
+    """Copy from an HTTP response to a file handle, printing progress."""
+    stop = threading.Event()
+    thread = threading.Thread(target=_progress_loop, args=(stop, fh.name),
+                              daemon=True)
+    thread.start()
+    shutil.copyfileobj(resp, fh)
+    stop.set()
+    thread.join()
+
+
 def _download_one(url: str, out_file: str):
-    """Download a file with curl (resume-capable) or urllib fallback."""
+    """Download a file with curl (resume-capable) or urllib fallback.
+
+    curl is capped by --max-time so a stalled transfer cannot hang the script;
+    on timeout it retries up to DOWNLOAD_TIMEOUT seconds total before giving up.
+    A live progress meter prints bytes received every second while the download
+    runs.
+    """
     if shutil.which("curl"):
-        cmd = ["curl", "-L", "--retry", "3", "-o", out_file, url]
+        cmd = ["curl", "-L", "--retry", "3", "--max-time", str(DOWNLOAD_TIMEOUT),
+               "--connect-timeout", str(CONNECT_TIMEOUT), "-o", out_file, url]
         if os.path.exists(out_file) and os.path.getsize(out_file) > 0:
-            cmd = ["curl", "-L", "-C", "-", "--retry", "3", "-o", out_file, url]
-            print(f"Resuming {out_file} ({os.path.getsize(out_file)} bytes so far)")
-        proc = subprocess.run(cmd)
-        if proc.returncode != 0:
-            sys.exit(f"download failed with exit code {proc.returncode}")
+            cmd = ["curl", "-L", "-C", "-", "--max-time", str(DOWNLOAD_TIMEOUT),
+                   "--connect-timeout", str(CONNECT_TIMEOUT),
+                   "--retry", "3", "-o", out_file, url]
+            print(f"Resuming {os.path.basename(out_file)} "
+                  f"({os.path.getsize(out_file)} bytes so far)")
+        _run_with_progress(cmd)
     else:
         start = os.path.getsize(out_file) if os.path.exists(out_file) else 0
         req = urllib.request.Request(url, headers={"User-Agent": "curl/8"})
         if start > 0:
             req.add_header("Range", f"bytes={start}-")
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(req, timeout=DOWNLOAD_TIMEOUT) as resp:
             mode = "ab" if start > 0 else "wb"
             with open(out_file, mode) as fh:
-                shutil.copyfileobj(resp, fh)
+                _copyfileobj_with_progress(resp, fh)
+
+
+def _download_media(layout: dict, out_file: str):
+    """Download a media layout (combined file or segmented fMP4) to ``out_file``.
+
+    A combined-file layout is one HTTP fetch. A segmented layout downloads the
+    init segment then every ``*.m4s`` in order; each file lives under the show's
+    own directory on the server, so URLs are prefixed with that directory. The
+    result is a single concatenated fMP4 file that ffmpeg can demux.
+    """
+    kind = layout["kind"]
+
+    if kind == "file":
+        # Combined file: a single self-contained download. The file lives under
+        # the show's own directory on the server, so prefix it with that dir.
+        path = layout["path"]
+        return _download_one(f"{BASE}/store-3/{layout['dir']}/{path}", out_file)
+
+    # Segmented: write the init segment, then append each segment in order. The
+    # files live under the show's own directory on the server (not at the root
+    # of /store-3/), so every URL is prefixed with that directory.
+    if os.path.exists(out_file):
+        os.remove(out_file)
+    with open(out_file, "wb") as fh:
+        for name in [layout["init"], *layout["segments"]]:
+            url = f"{BASE}/store-3/{layout['dir']}/{name}"
+            data = fetch(url)
+            if not data:
+                sys.exit(f"Empty response downloading {url}")
+            fh.write(data)
+    print(f"Downloaded {len(layout['segments']) + 1} files "
+          f"(init + {len(layout['segments'])} segments)")
 
 
 def main():

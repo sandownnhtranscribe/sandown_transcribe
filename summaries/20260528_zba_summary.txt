@@ -1,0 +1,19 @@
+Board Meeting Summary - May 28, 2026 (Zoning Board of Adjustment)
+File Name: summaries/20260528_zba_summary.txt
+
+The meeting reviewed two primary cases and accepted previous meeting minutes. Note that the board confirmed there was no public input allowed during this session.
+
+Key Decisions & Actions:
+
+1. Variance Request (3 Main Street):
+    *   **Subject:** Review of an application for a variance allowing an addition to an existing single-family home, proposing construction within the wetlands setback area (asking for 24.2 ft vs. 50 ft required).
+    *   **Issue/Condition:** The board noted that proper architectural plans were missing and are critical for evaluation.
+    *   **Outcome:** The motion was passed to accept the application **conditionally**, requiring the applicant to provide detailed quarter-inch scale architectural drawings for further review.
+
+2. Appeal of Administrative Decision (412 Main Street):
+    *   **Subject:** An appeal challenging the Board of Selectmen's refusal to render a zoning determination regarding the proper use classification and permit permissibility of camping cabins.
+    *   **Legal Challenge:** The board debated whether the ZBA had jurisdiction over an administrative decision made by the BOS.
+    *   **Outcome:** A motion was passed to **reject the application**, citing that the Zoning Board of Adjustment lacks jurisdiction because the Board of Selectmen did not make a formal, actionable decision involving the construction or interpretation of the zoning ordinance.
+
+Minute Review: The minutes for April 30th and May 20th were reviewed and accepted by the board with minor revisions.
+Adjournment: Motion passed to adjourn the meeting.
