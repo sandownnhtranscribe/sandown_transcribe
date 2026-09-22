@@ -1,19 +1,58 @@
-Board Meeting Summary - September 14, 2026
-File Name: summaries/20260914_bos_summary.txt
 
-The meeting commenced with the Pledge of Allegiance and reviewed the minutes from August 31st (both public and non-public records were accepted by motion).
+==========================================================
+BOARD OF SELECTMEN MEETING SUMMARY - SEPTEMBER 14, 2026
+Source: transcripts/20260914_bos_transcript.log
+Date: Monday, September 14, 2026
+Time Covered: Approximately 3:37 PM - 1:33 AM (Local Time)
+==========================================================
 
-Key Discussion Points & Actions:
+I. MEETING CALL TO ORDER & MINUTES APPROVAL
+The meeting was called to order by the Chair at approximately 00:03:41,000. Attendance was noted, including Town Administrator Lynn Blaisdell, Selectman Tom Tamburello, Assistant Chair Megan Daly, and others.
 
-1. Infrastructure & Development Concerns (Public Comment): A concerned taxpayer addressed the board regarding significant population influx to Sandown, noting that this growth is outpacing local infrastructure planning. He highlighted concerns over school additions, fire/sprinkler systems, and general municipal capacity.
-2. Forestry Vehicle Bid: The Board reviewed a bid for an excess military vehicle (a 2002 Stewart Stevenson's cab-over deuce and a half) from the Town of Newington. Discussion centered on its robustness compared to modern vehicles and significant cost savings ($140k estimated build vs $200k+ replacement). The board confirmed the bidding procedure required is not an auction, but a sealed bid process.
-3. Hazardous Mitigation Plan Grant: The Board reviewed grant funding from the Rockingham Planning Commission for updating the town’s hazardous mitigation plan (due to expire Sept 30th). After review of the terms and scope, the board motioned, and subsequently passed, the acceptance of the grant agreement. This funding is structured to allow payments via time/labor rather than cash.
-4. Fuel Bids: The Board reviewed bids for oil, gas, diesel, and propane as of September 30th. Due to pricing volatility (terminal pricing), the board motioned and passed entering a one-year contract with:
-    *   Palmer Gas: Oil at $389.90/gallon; Propane at $1.99/gallon.
-    *   Half Nurse: Gas/Diesel over Irving Terminal pricing ($0.499/gallon fixed rate).
-5. Community & Miscellaneous Updates:
-    *   The Oktoberfest Committee updated the public on raffle ticket sales, vendors (e.g., cornhole boards, grain sack toss), and planned entertainment for October 17th, emphasizing volunteer needs.
-    *   The Library Committee requested permission and volunteers for a beautification project at the library's overgrown property this coming Saturday.
-    *   Mosquito reports confirmed continuous monitoring until the first frost; no spraying was required.
+A. Minutes Acceptance:
+*   **August 31st Public Records:** A motion was made and passed to accept the minutes from August 31st (public records).
+*   **August 31st Non-Public Records:** Following acceptance of public minutes, a subsequent motion was made and passed to accept the non-public minutes of August 31st as read.
 
-Next Meeting: The next scheduled board meeting is set for September 28th.
+II. PUBLIC COMMENTARY & AGENDA ITEMS
+The floor was opened for Public Comment:
+
+A. Oktoberfest Committee Update (Karen Jortberg/Erica Olsen):
+*   **Purpose:** To inform the public about the ongoing Octoberfest event scheduled for October 17th.
+*   **Fundraising:** They are still selling raffle tickets for cornhole boards ($5 per piece or five for $20). All funds are raised through donations.
+*   **Activities/Vendors:** The event will feature activities including grain sack toss, music (The Stumpy Joe Band and Overlander Off Brew Band), beer, food (including German and Italian cuisine), and a bonfire.
+*   **Call to Action:** Volunteers are needed for setup and teardown. Payment can be made via Venmo, requiring the "paper trail" of town funds.
+
+B. Concerns Regarding Growth & Infrastructure (Tom Tamburello):
+*   Mr. Tamburello expressed significant concern regarding the influx of new residents to Sandown from out-of-state (mostly Massachusetts).
+*   He plans to meet with the Superintendent of Schools and the Fire Chief to discuss the potential strain on town infrastructure, including:
+    *   The school needing additions.
+    *   Fire/sprinkler system upgrades.
+
+III. NON-PUBLIC ITEMS / DISCUSSIONS
+Key items discussed under non-public session rules included:
+*   **Personnel Matters:** An agenda item was raised regarding personnel issues (details truncated).
+*   **Property Acquisition:** A discussion occurred concerning the acquisition of property, specifically involving areas labeled 'A' and 'D'.
+
+IV. KEY FINANCIAL AND DEVELOPMENT OUTCOMES
+The Board reviewed major development/infrastructure items:
+
+A. Grant Agreement Acceptance (Hazardous Mitigation Plan):
+*   The Board passed acceptance of a grant agreement from the Rockingham Planning Commission for updating the town’s hazardous mitigation plan. This agreement structure allows payments to be made in time/labor rather than cash, providing flexibility for the town.
+
+B. Fuel Contract Bids:
+*   The board entered one-year contracts for essential fuel services:
+    *   **Oil:** Palmer Gas at $389.90/gallon.
+    *   **Propane:** Palmer Gas at $1.99/gallon.
+    *   **Gas/Diesel:** Half Nurse at a fixed rate of $0.499/gallon.
+
+V. VEHICLE BIDS AND PLANNING BOARD UPDATES (Contextual):
+The meeting also included extensive discussion on large-scale development and equipment:
+*   **NOAA Estates Development:** Presented by Ryan Lavelle (NTV Builders, LLC), this project proposes developing a 62.75-acre property at 112 Little Mill Road into NOAA Estates (21 single-family dwelling units). The plan is described as an open space subdivision using zero-lot line condominium ownership, with individual wells and septic systems for each home.
+*   **Next Steps:** NTV Builders highlighted substantial progress in the drainage report and supporting materials revision after incorporating town and AOT comments. Remaining steps include final sign-off from engineering review, state subdivision approval, alteration of terrain, and Conservation Commission process completion. The committee advised following up on condo documents with Diane for formal review.
+*   **Fire Apparatus Bid:** Mike Divine presented an opportunity to bid on a retired fire vehicle (LMTV Light Tactical Vehicle) being sold by the Town of Newington. The board considered placing a bid amount of $12,500.
+
+VI. NEXT STEPS & REMAINING ITEMS
+The meeting adjourned after reviewing bids and proposals. Key follow-ups include:
+*   Completing coordination on the NOAA Estates development process (State/Engineering sign-off).
+*   Follow up on the status of condo documents review by Diane within Town Council.
+*   Investigating infrastructure capacity in response to population growth concerns raised during public comment.
