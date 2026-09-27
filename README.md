@@ -66,3 +66,5 @@ Tune the limits by editing `DOWNLOAD_TIMEOUT` / `CONNECT_TIMEOUT` at the top of 
 
 ---
 *Note: The script requires `ffmpeg`, `curl`, and `whisper` to be installed and available in your PATH.*
+
+<a href="https://www.buymeacoffee.com/jasonrussell" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
